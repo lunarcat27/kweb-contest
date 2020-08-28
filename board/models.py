@@ -14,7 +14,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add = True)
     last_updated_at = models.DateTimeField(auto_now = True)
     is_deleted = models.BooleanField(default = False)
-    like = models.ManyToManyField(User, related_name = 'like_user')
+    like = models.ManyToManyField(User, related_name = 'like', blank = True)
 
 class Comment(models.Model):
     comment = models.CharField(max_length = 300)

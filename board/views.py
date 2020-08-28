@@ -10,7 +10,7 @@ from .forms import *
 from .models import *
 
 def index(req):
-    return render(req, 'index.html')
+    return render(req, 'index.html', {'form': CategoryForm(), 'categories': Category.objects.all(),})
 
 def sign_up(req):
     if req.user.is_authenticated:
@@ -70,23 +70,103 @@ def sign_out(req):
     logout(req)
     return redirect('index')
 
-def category_view_head(req):
-    pass
+def category_view_head(req, category_id):
+    return redirect('category_view', category_id = category_id, page = 1)
 
-def category_view(req):
-    pass
+def category_view(req, category_id, page):
+    article_list = Article.objects.all().filter(is_deleted = False).filter(category = category_id).order_by('-id')
+
+    COUNT = 5
+    start_index = (page - 1) * COUNT
+    end_index = page * COUNT
+
+    page_count = math.ceil(len(article_list) / COUNT)
+
+    return render(req, 'articles/index.html', {
+        'page': page,
+        'category': Category.objects.get(pk = category_id),
+        'articles': article_list[start_index:end_index],
+        'has_prev': page > 1,
+        'has_next': page < page_count,
+    })
 
 def create_category(req):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+    if req.method == 'GET':
+        return create_category_form(req)
+    if req.method == 'POST':
+        return create_category_post(req)
+    return HttpResponse(status = 404)
+
+def create_category_form(req):
+    return render(req, 'index.html', {'form': CategoryForm(),})
+
+def create_category_post(req):
+    form = CategoryForm(req.POST)
+    if not form.is_valid():
+        return HttpResponse(status = 400)
+
+    category = Category.objects.create(
+        name = form.cleaned_data['name'],
+        creator = req.user,
+    )
+    category.save()
+
+    return redirect('index')
+
+def delete_category(req, category_id):
     pass
 
-def delete_category(req):
-    pass
+def get_article(req, article_id):
+    article = get_object_or_404(Article, id = article_id, is_deleted = False)
+    comments = Comment.objects.all().filter(is_deleted = False).filter(article = article_id).order_by('-id')
+    likes = article.like.all()
+    isLiked = False
 
-def get_article(req):
-    pass
+    for user in likes:
+        if user == req.user:
+            isLiked = True
+            break
 
-def compose_article(req):
-    pass
+    return render(req, 'articles/details.html', {
+        'article': article,
+        'comments': comments,
+        'comments_count': comments.count(),
+        'likes_count': likes.count(),
+        'liked': isLiked,
+        'comments': comments,
+        'comments_count': comments.count(),
+        'form': CommentForm(),
+    })
+
+def compose_article(req, category_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+    if req.method == 'GET':
+        return compose_article_form(req)
+    if req.method == 'POST':
+        return compose_article_post(req, category_id)
+    return HttpResponse(status = 404)
+
+def compose_article_form(req):
+    return render(req, 'articles/compose.html', {'form': ArticleForm(), 'is_compose': True})
+
+def compose_article_post(req, category_id):
+    form = ArticleForm(req.POST)
+    if not form.is_valid():
+        return HttpResponse(status = 400)
+
+    article = Article.objects.create(
+        title = form.cleaned_data['title'],
+        content = form.cleaned_data['content'], 
+        author = req.user,
+        category = Category.objects.get(pk = category_id),
+        # 나머지 값은 기본값
+    )
+    article.save()
+
+    return redirect('get_article', article_id = article.id)
 
 def edit_article(req):
     pass
