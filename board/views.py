@@ -250,10 +250,26 @@ def like(req, article_id):
         return HttpResponse(status = 404)
 
     article = get_object_or_404(Article, id = article_id, is_deleted = False)
-    
+    likes = article.like.all()
+    isLiked = False
 
-def profile_index(req):
-    pass
+    for user in likes:
+        if user == req.user:
+            isLiked = True
+            break
 
-def profile_articles(req):
-    pass
+    if isLiked:
+        article.like.remove(req.user)
+    else:
+        article.like.add(req.user)
+
+    return redirect('get_article', article_id = article_id)
+
+def profile_index(req, username):
+    return render(req, 'profile/index.html', {'profile_user': get_object_or_404(User, username = username),})
+
+def profile_articles(req, username):
+    return render(req, 'profile/articles.html', {
+        'user': get_object_or_404(User, username = username),
+        'articles': Article.objects.all().filter(is_deleted = False).filter(author = get_object_or_404(User, username = username).pk).order_by('-id')
+        })
