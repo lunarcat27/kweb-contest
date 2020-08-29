@@ -10,7 +10,7 @@ from .forms import *
 from .models import *
 
 def index(req):
-    return render(req, 'index.html', {'form': CategoryForm(), 'categories': Category.objects.all(),})
+    return render(req, 'index.html', {'form': CategoryForm(), 'categories': Category.objects.all().filter(is_deleted = False),})
 
 def sign_up(req):
     if req.user.is_authenticated:
@@ -93,14 +93,9 @@ def category_view(req, category_id, page):
 def create_category(req):
     if not req.user.is_authenticated:
         return HttpResponse(status = 404)
-    if req.method == 'GET':
-        return create_category_form(req)
     if req.method == 'POST':
         return create_category_post(req)
     return HttpResponse(status = 404)
-
-def create_category_form(req):
-    return render(req, 'index.html', {'form': CategoryForm(),})
 
 def create_category_post(req):
     form = CategoryForm(req.POST)
@@ -116,7 +111,15 @@ def create_category_post(req):
     return redirect('index')
 
 def delete_category(req, category_id):
-    pass
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+
+    category = get_object_or_404(Category, id = category_id, is_deleted = False, creator = req.user)
+
+    category.is_deleted = True
+    category.save()
+
+    return redirect('index')
 
 def get_article(req, article_id):
     article = get_object_or_404(Article, id = article_id, is_deleted = False)
@@ -162,26 +165,92 @@ def compose_article_post(req, category_id):
         content = form.cleaned_data['content'], 
         author = req.user,
         category = Category.objects.get(pk = category_id),
-        # 나머지 값은 기본값
     )
     article.save()
 
     return redirect('get_article', article_id = article.id)
 
-def edit_article(req):
-    pass
+def edit_article(req, article_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
 
-def delete_article(req):
-    pass
+    article = get_object_or_404(Article, id = article_id, is_deleted = False, author = req.user)
 
-def compose_comment(req):
-    pass
+    if req.method == 'GET':
+        return edit_article_form(req, article)
+    if req.method == 'POST':
+        return edit_article_post(req, article)
+    return HttpResponse(status = 404)
 
-def delete_comment(req):
-    pass
+def edit_article_form(req, article):
+    return render(req, 'articles/compose.html', {
+        'form': ArticleForm(initial = {
+            'title': article.title,
+            'content': article.content,
+            }),
+        'is_compose': False
+        })
 
-def like(req):
-    pass
+def edit_article_post(req, article):
+    form = ArticleForm(req.POST)
+    if not form.is_valid():
+        return HttpResponse(status = 400)
+
+    article.title = form.cleaned_data['title']
+    article.content = form.cleaned_data['content']
+    article.save()
+
+    return redirect('get_article', article_id = article.id)
+
+def delete_article(req, article_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+
+    article = get_object_or_404(Article, id = article_id, is_deleted = False, author = req.user)
+
+    article.is_deleted = True
+    article.save()
+
+    return redirect('category_view_head', category_id = article.category.pk)
+
+def compose_comment(req, article_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+    if req.method == 'POST':
+        return compose_comment_post(req, article_id)
+    return HttpResponse(status = 404)
+
+def compose_comment_post(req, article_id):
+    form = CommentForm(req.POST)
+    if not form.is_valid():
+        return HttpResponse(status = 400)
+
+    comment = Comment.objects.create(
+        content = form.cleaned_data['content'],
+        author = req.user,
+        article = Article.objects.get(pk = article_id),
+    )
+    comment.save()
+
+    return redirect('get_article', article_id = article_id)
+
+def delete_comment(req, comment_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+
+    comment = get_object_or_404(Comment, id = comment_id, is_deleted = False, author = req.user)
+
+    comment.is_deleted = True
+    comment.save()
+
+    return redirect('get_article', article_id = comment.article.pk)
+
+def like(req, article_id):
+    if not req.user.is_authenticated:
+        return HttpResponse(status = 404)
+
+    article = get_object_or_404(Article, id = article_id, is_deleted = False)
+    
 
 def profile_index(req):
     pass

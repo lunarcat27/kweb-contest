@@ -17,7 +17,7 @@ class Article(models.Model):
     like = models.ManyToManyField(User, related_name = 'like', blank = True)
 
 class Comment(models.Model):
-    comment = models.CharField(max_length = 300)
+    content = models.CharField(max_length = 300)
     author = models.ForeignKey(User, on_delete = models.CASCADE)
     article = models.ForeignKey(Article, on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now_add = True)
