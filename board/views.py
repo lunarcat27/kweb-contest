@@ -270,6 +270,6 @@ def profile_index(req, username):
 
 def profile_articles(req, username):
     return render(req, 'profile/articles.html', {
-        'user': get_object_or_404(User, username = username),
+        'profile_user': get_object_or_404(User, username = username),
         'articles': Article.objects.all().filter(is_deleted = False).filter(author = get_object_or_404(User, username = username).pk).order_by('-id')
         })
