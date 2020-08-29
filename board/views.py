@@ -116,7 +116,7 @@ def delete_category(req, category_id):
 
     category = get_object_or_404(Category, id = category_id, is_deleted = False, creator = req.user)
 
-    articles = Article.objects.all().filter(is_deleted = False).filter(category = category)
+    articles = Article.objects.all().filter(is_deleted = False).filter(category = category_id)
 
     for article in articles:
         article.is_deleted = True
@@ -144,8 +144,6 @@ def get_article(req, article_id):
         'comments_count': comments.count(),
         'likes_count': likes.count(),
         'liked': isLiked,
-        'comments': comments,
-        'comments_count': comments.count(),
         'form': CommentForm(),
     })
 

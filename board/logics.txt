@@ -1,0 +1,39 @@
+
+- GET /category/<int:category_id>/page/<int:page>
+
+1. Article 목록 중 삭제 여부가 False이고 category가 category_id인 게시물을 모두 article_list에 저장
+2. 한 페이지당 게시물 수를 5로 잡고 불러올 인덱스 범위 설정
+3. 총 페이지 수를 (article_list의 요소 개수 / 페이지당 게시물 수)의 올림으로 설정
+4. articles/index.html을 렌더링:
+    page - 현재 페이지
+    category - pk값이 category_id인 Category
+    articles - article_list의 start_index ~ (end_index - 1)번 요소
+    has_prev - page > 1이면 True, 아니면 False
+    has_next - page < 최대 페이지 수면 True, 아니면 False
+
+
+- GET /article/<int:article_id>
+
+1. Article 목록 중 삭제 여부가 False이고 id값이 article_id인 게시물을 article에 불러오기
+2. Comment 목록 중 삭제 여부가 False이고 속한 게시물의 id값이 article_id인 댓글을 모두 comments에 최신순으로 불러오기
+3. 게시물의 like에 저장된 유저 모두를 likes에 불러오기
+4. 현재 유저가 게시물을 좋아하는지를 나타내는 isLiked 플래그 설정 (기본값 False)
+5. likes 목록 중에 현재 유저가 존재하면 isLiked = True
+6. articles/details.html을 렌더링:
+    article - 현재 게시물 (article)
+    comments - 댓글 목록 (comments)
+    comments_count - 댓글 개수 (count 메서드 이용)
+    likes_count - 좋아요 개수 (count 메서드 이용)
+    liked - isLiked
+    form - 댓글 작성용 폼
+
+
+- GET /like/<int:article_id>
+
+1. 현재 유저가 로그인되어 있지 않으면 404 에러 출력
+2. Article 목록 중 삭제 여부가 False이고 id값이 article_id인 게시물을 article에 불러오기
+3. 게시물의 like에 저장된 유저 모두를 likes에 불러오기
+4. 현재 유저가 게시물을 좋아하는지를 나타내는 isLiked 플래그 설정 (기본값 False)
+5. likes 목록 중에 현재 유저가 존재하면 isLiked = True
+6. isLiked = True이면 좋아요를 취소해야 하므로 article.like 목록에서 현재 유저를 삭제 (delete 메서드 대신 remove 사용함)
+7. isLiked = False이면 좋아요를 눌러야 하므로 article.like 목록에 현재 유저 추가 (add 메서드)
