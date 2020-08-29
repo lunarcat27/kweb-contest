@@ -116,6 +116,12 @@ def delete_category(req, category_id):
 
     category = get_object_or_404(Category, id = category_id, is_deleted = False, creator = req.user)
 
+    articles = Article.objects.all().filter(is_deleted = False).filter(category = category)
+
+    for article in articles:
+        article.is_deleted = True
+        article.save()
+
     category.is_deleted = True
     category.save()
 
@@ -269,7 +275,10 @@ def profile_index(req, username):
     return render(req, 'profile/index.html', {'profile_user': get_object_or_404(User, username = username),})
 
 def profile_articles(req, username):
+    user = get_object_or_404(User, username = username)
     return render(req, 'profile/articles.html', {
-        'profile_user': get_object_or_404(User, username = username),
-        'articles': Article.objects.all().filter(is_deleted = False).filter(author = get_object_or_404(User, username = username).pk).order_by('-id')
+        'profile_user': user,
+        'articles': Article.objects.all().filter(is_deleted = False)
+        .filter(author = user.pk)
+        .order_by('-id')
         })
