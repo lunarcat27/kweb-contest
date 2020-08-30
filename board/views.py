@@ -108,7 +108,7 @@ def create_category_post(req):
     )
     category.save()
 
-    return redirect('index')
+    return redirect('category_view_head', category_id = category.id)
 
 def delete_category(req, category_id):
     if not req.user.is_authenticated:
@@ -225,6 +225,11 @@ def compose_comment(req, article_id):
     return HttpResponse(status = 404)
 
 def compose_comment_post(req, article_id):
+    article = Article.objects.get(pk = article_id)
+
+    if article.is_deleted == True:
+        return HttpResponse(status = 404)
+
     form = CommentForm(req.POST)
     if not form.is_valid():
         return HttpResponse(status = 400)
@@ -232,7 +237,7 @@ def compose_comment_post(req, article_id):
     comment = Comment.objects.create(
         content = form.cleaned_data['content'],
         author = req.user,
-        article = Article.objects.get(pk = article_id),
+        article = article,
     )
     comment.save()
 
